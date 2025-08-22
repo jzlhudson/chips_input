@@ -572,16 +572,29 @@ class ChipsInputState<T extends Object> extends State<ChipsInput<T>>
       widget.onChanged!(_chips.toList(growable: false));
   }
 
+ bool _isDeleting = false;
   void deleteChip(T data) {
-    if (widget.enabled == null || widget.enabled!) {
-      setState(() {
-        _chips = _chips..remove(data);
-        _effectiveController.text = _effectiveController.text.substring(1);
-        _effectiveController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _effectiveController.text.length));
-      });
-      if (widget.onChanged != null)
-        widget.onChanged!(_chips.toList(growable: false));
+    if (_isDeleting) return; // Prevent recursive calls
+    _isDeleting = true; 
+    try {
+      if (widget.enabled == null || widget.enabled!) {
+        setState(() {
+          _chips?.remove(data);
+
+          if (_effectiveController != null) {
+            _effectiveController.text = _chips.join(', ');
+            _effectiveController.selection = TextSelection.fromPosition(
+              TextPosition(offset: _effectiveController.text.length),
+            );
+          }
+        });
+
+        if (widget.onChanged != null) {
+          widget.onChanged!(_chips.toList(growable: false));
+        }
+      }
+    } finally {
+      _isDeleting = false; 
     }
   }
 
